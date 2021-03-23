@@ -31,7 +31,7 @@ alpha_PVA = 40 * f_ref * 1e-12
 k_PVA = 1e-10 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
 n_PLA = 1.6 * np.ones(f_ref.size)
 alpha_PLA = 35  # cm^-1 / THz
-alpha_PLA = 40 * f_ref * 1e-12
+alpha_PLA = 35 * f_ref * 1e-12
 k_PLA = 35  # cm^-1 / THz
 
 

@@ -37,12 +37,12 @@ Z3, Z3_aux = np.meshgrid(zs3, zs3)
 fig = plt.figure()
 ax = fig.add_subplot(111, projection='3d')
 
-# ax.plot_surface(X, Y, Z1)
-# ax.plot_surface(X, Y, Z2)
-# ax.plot_surface(X, Y, Z3)
-ax.scatter(x, y, zs1)
-ax.scatter(x, y, zs2)
-ax.scatter(x, y, zs3)
+# ax.plot_surface(X, Y, Z1, color='tab:blue')
+# ax.plot_surface(X, Y, Z2, color='tab:orange')
+# ax.plot_surface(X, Y, Z3, color='tab:green')
+# ax.scatter(x, y, zs1, color='tab:blue')
+# ax.scatter(x, y, zs2, color='tab:orange')
+ax.scatter(x, y, zs3, color='tab:green')
 
 
 ax.set_xlabel('X Label')
