@@ -19,8 +19,16 @@ for i in range(3):
     n, alpha, n_avg = jpidx.jepsen_index(t_ref, E_ref, t_sam, E_sam, 200e-6)
     plt.figure(1)
     plt.plot(f_ref, n)
+    plt.xlim([0, 1e12])
+    plt.ylim([1, 3])
     plt.figure(2)
     plt.plot(f_ref, alpha*1e-2)
+    plt.xlim([0, 1e12])
+    plt.ylim([0, 50])
+plt.figure(1)
+plt.plot(f_ref, 1.83 * np.ones(f_ref.size))
+plt.figure(2)
+plt.plot(f_ref, 45 * f_ref * 1e-12)
 
 
 for i in range(3):
@@ -32,8 +40,16 @@ for i in range(3):
     n, alpha, n_avg = jpidx.jepsen_index(t_ref, E_ref, t_sam, E_sam, 140e-6)
     plt.figure(3)
     plt.plot(f_ref, n)
+    plt.xlim([0, 1e12])
+    plt.ylim([1, 3])
     plt.figure(4)
     plt.plot(f_ref, alpha*1e-2)
+    plt.xlim([0, 1e12])
+    plt.ylim([0, 50])
+plt.figure(3)
+plt.plot(f_ref, 1.6 * np.ones(f_ref.size))
+plt.figure(4)
+plt.plot(f_ref, 30 * f_ref * 1e-12)
 
 
 plt.show()

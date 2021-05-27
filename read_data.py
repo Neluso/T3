@@ -60,3 +60,24 @@ def read_slow_data(file_path):  # output: time (ps), I (nA)
         t_ref.append(float(item[0]))
         E_ref.append(float(item[1]))
     return array(t_ref), - flip(array(E_ref)) * 1e9
+
+
+def read_from_1file(file_path):  # reads: Hz, 1, 1, cm^-1, cm^-1
+    fh = open(file_path)
+    data = fh.read()
+    data = data.split('\n')
+    freq = list()
+    n_val = list()
+    n_std = list()
+    alpha_val = list()
+    alpha_std = list()
+    for item in data:
+        item = item.split(',')
+        if item == ['']:
+            break
+        freq.append(float(item[0]))
+        n_val.append(float(item[1]))
+        n_std.append(float(item[2]))
+        alpha_val.append(float(item[3]))
+        alpha_std.append(float(item[4]))
+    return array(freq), array(n_val), array(n_std), array(alpha_val), array(alpha_std)

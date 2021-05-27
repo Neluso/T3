@@ -15,6 +15,11 @@ def param_2_thickess(param_d):
     return (25 * param_d + 5) * 1e-5  # 50 to 250 um
 
 
+def abs_diff(params):
+    x1, x2, x3, aux1, aux2, aux3, aux4 = params
+    return np.abs(x1-x3)
+
+
 def cost_function(params, *args):
     E_sam, E_ref_w, freqs, n_PVA, k_PVA, n_PLA, k_PLA = args
     # thick_1, thick_2, thick_3, d_air = params
@@ -65,8 +70,11 @@ def cost_function(params, *args):
     return sum((E_sam - E_teo) ** 2)
 
 
-ref_file = './data/aux_data/ref.txt'
+samples_num = 6000
+ref_file = './data/ref.txt'
 t_ref, E_ref = rd.read_1file(ref_file)
+# t_ref = t_ref[:samples_num]
+# E_ref = E_ref[:samples_num]
 delta_t_ref = np.mean(np.diff(t_ref))
 
 enlargement = 0 * E_ref.size
@@ -105,11 +113,6 @@ k_PLA = 1e-10 * TDSC.c_0 * alpha_PLA / (4 * np.pi * f_ref)
 # plt.plot(f_ref, n_PLA)
 # plt.show()
 
-img_dir = './data/img_data/'
-file_list = os.listdir(img_dir)
-wh = open('./results.txt', 'a')
-
-points = list()
 
 thick_tupl = (20e-6, 450e-6)
 correct_tuple = (0.9, 1.1)
@@ -125,76 +128,80 @@ k_bounds = [
     , correct_tuple
 ]
 
-x = list()
-y = list()
-zs1 = list()
-zs2 = list()
-zs3 = list()
-
 
 if __name__ == '__main__':
-    for sam_file in file_list:
-        # wh = open('./results.txt', 'a')
-        t_sam, E_sam = rd.read_1file(img_dir + sam_file)
-        E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
-        t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
-        plt.plot(t_sam, E_sam)
-        # t_sam = - np.flip(t_sam)
-        t_sam *= 1e-12
-        sam_file_name = sam_file.split('_')
-        posV = float(sam_file_name[1])
-        posH = float(sam_file_name[3].replace('.txt', ''))
-        # if 44.0 < posV < 46.0:
-        #     if 25.0 < posH < 30.0:
-        #         print(posV, posH)
-        #         break
-        print(str(posV) + '/77.0', str(posH) + '/10.0')
-        num_statistics = 5
-        z1 = list()
-        z2 = list()
-        z3 = list()
-        for num_stats in range(num_statistics):
-            # if 72.5 <= posV <= 77.2:
-            #     break
-            # elif 5.0 <= posH <= 10.0:
-            #     break
-            # res = spy_opt.minimize(cost_function,
-            #                        (200e-6, 200e-6, 200e-6),  # 1, 1, 1, 1),
-            #                        args=(E_sam, E_ref_w, f_ref, n_PVA, k_PVA, n_PLA, k_PLA)
-            #                        )
-            res = spy_opt.differential_evolution(cost_function,
-                                                 k_bounds,
-                                                 args=(E_sam, E_ref_w, f_ref, n_PVA, k_PVA, n_PLA, k_PLA),
-                                                 # popsize=30,
-                                                 # maxiter=3000,
-                                                 updating='deferred',
-                                                 workers=-1,
-                                                 disp=False,  # step cost_function value
-                                                 polish=False
-                                                 )
-            z1.append(res.x[0])
-            z2.append(res.x[1])
-            z3.append(res.x[2])
-            # z1.append(param_2_thickess(res.x[0]))
-            # z2.append(param_2_thickess(res.x[2]))
-            # z3.append(param_2_thickess(res.x[2]))
-        # H1 = H_T3.H_sim(f_ref, n_PLA, k_PLA, np.mean(z1), TDSC.n_air, 0, n_PVA, k_PVA)
-        # H2 = H_T3.H_sim(f_ref, n_PVA, k_PVA, np.mean(z2), n_PLA, k_PLA, n_PLA, k_PLA)
-        # H3 = H_T3.H_sim(f_ref, n_PLA, k_PLA, np.mean(z3), n_PVA, k_PVA, TDSC.n_air, 0)
-        # air_phase = H_T3.phase_factor(TDSC.n_air, 0, - (np.mean(z1) + np.mean(z2) + np.mean(z3)), f_ref)
-        # E_teo = np.fft.irfft(H1 * H2 * H3 * E_ref_w)
-        # plt.plot(t_ref * 1e12, E_teo)
-        # print(np.mean(z1)*1e6, np.mean(z2)*1e6, np.mean(z3)*1e6)
-        # plt.show()
-        point = (posV, posH, np.mean(z1), np.mean(z2), np.mean(z3))
-        # point = (posV, posH, z1[0], z2[0], z3[0])
-        # points.append(point)
-        # print(point)
-        wh.write(str(point) + '\n')
-        # wh.close()
-        # print((posV, posH, res.x[1], res.x[2], res.x[3]))
-        # x.append(posH)
-        # y.append(posV)
-        # zs1.append(res.x[1])
-        # zs2.append(res.x[2])
-        # zs3.append(res.x[3])
+    t_sam, E_sam = rd.read_1file('./data/PosV_75.000000_PosH_5.000000.txt')
+    # t_sam = t_sam[:samples_num]
+    # E_sam = E_sam[:samples_num]
+    E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
+    t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
+    plt.plot(t_sam, E_sam)
+    t_sam *= 1e-12
+
+    num_statistics = 5
+    z1 = list()
+    z2 = list()
+    z3 = list()
+    for num_stats in range(num_statistics):
+        # res = spy_opt.minimize(cost_function,
+        #                        np.array((200e-6, 210e-6, 200e-6, 1, 1, 1, 1)),
+        #                        args=(E_sam, E_ref_w, f_ref, n_PVA, k_PVA, n_PLA, k_PLA),
+        #                        bounds=k_bounds
+        #                        # , constraints=[spy_opt.NonlinearConstraint(abs_diff, 0, 20e-6)]
+        #                        )
+        res = spy_opt.differential_evolution(cost_function,
+                                             k_bounds,
+                                             args=(E_sam, E_ref_w, f_ref, n_PVA, k_PVA, n_PLA, k_PLA),
+                                             # popsize=30,
+                                             # maxiter=3000,
+                                             updating='deferred',
+                                             workers=-1,
+                                             disp=True,  # step cost_function value
+                                             polish=False
+                                             # , constraints=[spy_opt.NonlinearConstraint(abs_diff, 0, 20e-6)]
+                                             )
+        z1.append(res.x[0])
+        z2.append(res.x[1])
+        z3.append(res.x[2])
+        print(res.x)
+        # z1.append(param_2_thickess(res.x[0]))
+        # z2.append(param_2_thickess(res.x[2]))
+        # z3.append(param_2_thickess(res.x[2]))
+    # H1 = H_T3.H_sim(f_ref, n_PLA, k_PLA, np.mean(z1), TDSC.n_air, 0, n_PVA, k_PVA)
+    # H2 = H_T3.H_sim(f_ref, n_PVA, k_PVA, np.mean(z2), n_PLA, k_PLA, n_PLA, k_PLA)
+    # H3 = H_T3.H_sim(f_ref, n_PLA, k_PLA, np.mean(z3), n_PVA, k_PVA, TDSC.n_air, 0)
+    # air_phase = H_T3.phase_factor(TDSC.n_air, 0, - (np.mean(z1) + np.mean(z2) + np.mean(z3)), f_ref)
+    # E_teo = np.fft.irfft(H1 * H2 * H3 * E_ref_w)
+    ca1 = H_T3.ct(TDSC.n_air, n_PLA - 1j * k_PLA)
+    phi1 = H_T3.phase_factor(n_PLA - TDSC.n_air, k_PLA, np.mean(z1), f_ref)
+    c12 = H_T3.ct(n_PLA - 1j * k_PLA, n_PVA - 1j * k_PVA)
+    fp1 = H_T3.fabry_perot(f_ref, n_PLA, k_PLA, np.mean(z1), TDSC.n_air, 0, n_PVA, k_PVA)
+    H_teo = ca1 * phi1 * c12 * fp1
+
+    phi2 = H_T3.phase_factor(n_PVA - TDSC.n_air, k_PVA, np.mean(z2), f_ref)
+    c23 = H_T3.ct(n_PVA - 1j * k_PVA, n_PLA - 1j * k_PLA)
+    fp2 = H_T3.fabry_perot(f_ref, n_PVA, k_PVA, np.mean(z2), n_PVA, k_PVA, n_PVA, k_PVA)
+    H_teo = H_teo * phi2 * c23 * fp2
+
+    phi3 = H_T3.phase_factor(n_PLA - TDSC.n_air, k_PLA, np.mean(z3), f_ref)
+    c3a = H_T3.ct(n_PLA - 1j * k_PLA, TDSC.n_air)
+    fp3 = H_T3.fabry_perot(f_ref, n_PVA, k_PVA, np.mean(z3), n_PVA, k_PVA, n_PVA, k_PVA)
+
+    H_teo = H_teo * phi3 * c3a * fp3
+    # H_teo = H1 * H2 * H3
+    E_teo = np.fft.irfft(H_teo * E_ref_w)
+    plt.plot(t_ref * 1e12, E_teo)
+    z1_mean = np.round(np.mean(z1) * 1e6, 0)
+    z2_mean = np.round(np.mean(z2) * 1e6, 0)
+    z3_mean = np.round(np.mean(z3) * 1e6, 0)
+    print(z1_mean, z2_mean, z3_mean)
+    print(z1_mean + z2_mean + z3_mean, '--- 610 um')
+    plt.show()
+    # point = (posV, posH, z1[0], z2[0], z3[0])
+    # print(point
+    # print((posV, posH, res.x[1], res.x[2], res.x[3]))
+    # x.append(posH)
+    # y.append(posV)
+    # zs1.append(res.x[1])
+    # zs2.append(res.x[2])
+    # zs3.append(res.x[3])

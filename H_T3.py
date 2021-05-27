@@ -17,18 +17,23 @@ def phase_factor(n, k, thick, freq):  # theta in radians
 
 
 def fabry_perot(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
-    cri2 = cr(n_i - 1j * k_i, n_2 - 1j * k_2)
-    cri1 = cr(n_i - 1j * k_i, n_1 - 1j * k_1)
-    exp_phi = phase_factor(n_i, k_i, thick_i, freq)
-    fp = 1 - cri2 * cri1 * exp_phi**2
+    cri2 = cr(n_i, n_2)
+    cri1 = cr(n_i, n_1)
+    # cri2 = cr(n_i - 1j * k_i, n_2 - 1j * k_2)
+    # cri1 = cr(n_i - 1j * k_i, n_1 - 1j * k_1)
+    exp_phi = phase_factor(n_i, k_i, 2 * thick_i, freq)
+    fp = 1 - cri2 * cri1 * exp_phi
     fp = 1 / fp
+    # fp = 1 + cri2 * cri1 * exp_phi
     return fp
 
 
 def H_sim(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
-    exp_phi = phase_factor(n_i, k_i, thick_i, freq)
-    ct1i = ct(n_1 - 1j * k_1, n_i - 1j * k_i)
-    cti2 = ct(n_i - 1j * k_i, n_2 - 1j * k_2)
+    exp_phi = phase_factor(n_i - TDSC.n_air, k_i, thick_i, freq)
+    ct1i = ct(n_1, n_i)
+    cti2 = ct(n_i, n_2)
+    # ct1i = ct(n_1 - 1j * k_1, n_i - 1j * k_i)
+    # cti2 = ct(n_i - 1j * k_i, n_2 - 1j * k_2)
     fp = fabry_perot(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2)
     H_i = ct1i * cti2 * exp_phi * fp
     return H_i
