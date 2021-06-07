@@ -18,6 +18,10 @@ for line in fh:
     line = line.replace(')', '')
     line = line.replace('\n', '')
     line = line.split(',')
+    if float(line[0]) <= 35.0:
+        continue
+    # if 25.0 >= float(line[1]) >= 5.0:
+    #     continue
     y.append(float(line[0]))
     x.append(float(line[1]))
     zs1.append(float(line[2]))
@@ -31,26 +35,30 @@ zs1 = np.array(zs1) * 1e6
 zs2 = np.array(zs2) * 1e6
 zs3 = np.array(zs3) * 1e6
 
-# zs1 = ndimage.uniform_filter(zs1, size=3)
-# zs2 = ndimage.uniform_filter(zs2, size=3)
-# zs3 = ndimage.uniform_filter(zs3, size=3)
+zs1 = ndimage.uniform_filter(zs1, size=10)
+zs2 = ndimage.uniform_filter(zs2, size=10)
+zs3 = ndimage.uniform_filter(zs3, size=10)
 
-
-zs_aux = zs1.reshape((int(77 - 73) + 1, int(10 - 5) + 1))
+# print(int(int(np.amax(x) - np.amin(x))) + 1)
+# quit()
+# zs_aux = zs1.reshape((int(np.amax(y) - np.amin(y)) + 1, int(np.amax(x) - np.amin(x)) + 1))
+zs_aux = zs1.reshape((int(np.amax(y) - np.amin(y)) + 1, int(30.0 - 0.0) + 1))
 avg_wgt = np.zeros(zs_aux.shape)
 idxX = zs_aux.shape[0]
 idxY = zs_aux.shape[1]
-sq_ones_size = 5
+sq_ones_size = 10
 sq_ones = np.ones((sq_ones_size, sq_ones_size))
 mid_idxX = int((idxX - sq_ones_size)/2)
 mid_idxY = int((idxY - sq_ones_size)/2)
 avg_wgt[mid_idxX:mid_idxX + sq_ones_size, mid_idxY:mid_idxY + sq_ones_size] = sq_ones
-avg_wgt = avg_wgt.reshape(30)
+avg_wgt = avg_wgt.reshape(y.size)
 
 
 z1_val = np.average(zs1, weights=avg_wgt)
-z2_val = np.average(zs2, weights=avg_wgt) - z1_val
+z2_val = np.average(zs2, weights=avg_wgt)
 z3_val = np.average(zs3, weights=avg_wgt) - z2_val
+z2_val = z2_val - z1_val
+
 print('Capa 1 =', z1_val, 'um')
 print('Capa 2 =', z2_val, 'um')
 print('Capa 3 =', z3_val, 'um')
@@ -84,6 +92,6 @@ ax.set_zlabel(r'Z ($\mu m$)')
 
 # ax.set_xlim3d(15, 19)
 # ax.set_ylim3d(33, 37)
-ax.set_zlim3d(0, 700)
+ax.set_zlim3d(0, 350)
 
 plt.show()
