@@ -39,6 +39,15 @@ def cost_function(params, *args):
     return np.sum(delta_E**2)  # + np.sum(delta_H_abs**2) + 1e-2 * np.sum(delta_H_phi**2)
 
 
+t_ref, E_ref = rd.read_1file('./data/aux_data/ref.txt')
+f_ref, E_ref_w = DSPf.fourier_analysis(t_ref, E_ref)
+plt.plot(np.unwrap(np.angle(E_ref_w)))
+t_ref, E_ref = rd.read_1file('./data/20210609_PLA_PVA_2/ref1.txt')
+f_ref, E_ref_w = DSPf.fourier_analysis(t_ref, E_ref)
+plt.plot(np.unwrap(np.angle(E_ref_w)))
+plt.show()
+quit()
+
 theta_input = 45  # deg
 theta_input *= np.pi / 180
 
@@ -92,6 +101,7 @@ alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=alpha_PVA[0], right=alpha
 # alpha_PVA = 52  # cm^-1 / THz
 # alpha_PVA = alpha_PVA * f_ref * 1e-12
 k_PVA = 1e2 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
+k_PVA[0] = 0
 
 freq_aux, n_PLA, n_PLA_std, alpha_PLA, alpha_PLA_std = rd.read_from_1file('./PLA_PVA/PLA.txt')
 # pol_n_PLA = np.polyfit(freq_aux, n_PLA, 1)
@@ -104,6 +114,7 @@ alpha_PLA = np.interp(f_ref, freq_aux, alpha_PLA, left=alpha_PLA[0], right=alpha
 # alpha_PLA = 28  # cm^-1 / THz
 # alpha_PLA = alpha_PLA * f_ref * 1e-12
 k_PLA = 1e2 * TDSC.c_0 * alpha_PLA / (4 * np.pi * f_ref)
+k_PLA[0] = 0
 
 
 thick_tupl = (20e-6, 500e-6)
