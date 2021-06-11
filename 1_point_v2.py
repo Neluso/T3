@@ -22,55 +22,11 @@ def param_2_thickess(param_d):
 
 
 def cost_function(params, *args):
-    E_sam, E_ref_w, E_sam_w, freqs, n_PVA, k_PVA, n_PLA, k_PLA = args
-    # thick_1, thick_2, thick_3, d_air = params
-    thick_1, thick_2, thick_3 = params
-    # thick_1, thick_2, thick_3, nv, kv, nl, kl = params
-    # thick_1, thick_2, thick_3, delta_1, delta_2, delta_3, delta_4 = params
-    # thick, n, k = params
-
-    # print(params)
-
-    # thick_1 = param_2_thickess(thick_1)
-    # thick_2 = param_2_thickess(thick_2)
-    # thick_3 = param_2_thickess(thick_3)
-    # n_PVA *= delta_1
-    # k_PVA *= delta_2
-    # n_PLA *= delta_3
-    # k_PLA *= delta_4
-
-    # n_PVA = nv
-    # k_PVA = kv * freqs * 1e-12
-    # k_PVA[0] = 0
-    # n_PLA = nl
-    # k_PLA = kl * freqs * 1e-12
-    # k_PLA[0] = 0
-
-    n_s = [TDSC.n_air, n_PLA, n_PVA, n_PLA, TDSC.n_air]
-    k_s = [0, k_PLA, k_PVA, k_PLA, 0]
-    thick_s = [thick_1, thick_2, thick_3]
-
-    # thick_s = [thick]
-    # n_s = [TDSC.n_air, n, TDSC.n_air]
-    # k_s = [0, k * f_ref * 1e-12, 0]
-
-    H_teo = H_T3.H_sim_rouard(freqs, n_s, k_s, thick_s)
-    H_sam = E_sam_w / E_ref_w
-    w_filt = DSPf.wiener_filter(E_ref_w)
-    H_teo *= w_filt
+    E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s = args
+    H_teo = H_T3.H_sim_rouard(freqs, n_s, k_s, params)
     E_teo = np.fft.irfft(E_ref_w * H_teo, n=E_sam.size)
     delta_E = E_sam - E_teo
-    delta_abs = np.abs(H_sam) - np.abs(H_teo)
-    delta_abs = delta_abs[:75]
-    # delta_abs *= w_filt
-    delta_phi = np.unwrap(np.angle(H_sam)) - np.unwrap(np.angle(H_teo))
-    delta_phi = delta_phi[:75]
-    # print(np.sum(delta_E)**2)
-    # print(1e-3 * np.sum(delta_abs)**2)
-    # quit()
-    # print(1e-9 * np.sum(delta_phi) ** 2)
-    # return np.sum(delta_E**2) + np.sum(delta_abs**2) + np.sum(delta_phi**2)
-    return np.sum(delta_abs**2) + np.sum(delta_phi**2)
+    return np.sum(delta_E**2)
 
 
 ref_file = './data/ref.txt'
@@ -87,25 +43,21 @@ f_ref, E_ref_w = DSPf.fourier_analysis(t_ref, E_ref)
 f_ref2, E_ref_sim_w = DSPf.fourier_analysis(t_ref, E_ref_sim)
 f_ref[0] = 1
 
-# freq_aux, n_PVA, n_PVA_std, alpha_PVA, alpha_PVA_std = rd.read_from_1file('./PLA_PVA/PVA.txt')
-# pol_n_PVA = np.polyfit(freq_aux, n_PVA, 1)
-# n_PVA = pol_n_PVA[0] * f_ref + pol_n_PVA[1]
-# pol_alpha_PVA = np.polyfit(freq_aux, alpha_PVA, 1)
-# alpha_PVA = 0.1 * (1e-24) * f_ref**2 + 0.9 * pol_alpha_PVA[0] * f_ref + pol_alpha_PVA[1]
-n_PVA = 1.89 * np.ones(f_ref.size)
-alpha_PVA = 52  # cm^-1 / THz
-alpha_PVA = alpha_PVA * f_ref * 1e-12
-k_PVA = 1e-10 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
+freq_aux, n_PVA, n_PVA_std, alpha_PVA, alpha_PVA_std = rd.read_from_1file('./PLA_PVA/PVA.txt')
+n_PVA = np.interp(f_ref, freq_aux, n_PVA, left=n_PVA[0], right=n_PVA[-1])
+alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=alpha_PVA[0], right=alpha_PVA[-1])
+# n_PVA = 1.89 * np.ones(f_ref.size)
+# alpha_PVA = 52  # cm^-1 / THz
+# alpha_PVA = alpha_PVA * f_ref * 1e-12
+k_PVA = 1e2 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
 
-# freq_aux, n_PLA, n_PLA_std, alpha_PLA, alpha_PLA_std = rd.read_from_1file('./PLA_PVA/PLA.txt')
-# pol_n_PLA = np.polyfit(freq_aux, n_PLA, 1)
-# n_PLA = pol_n_PLA[0] * f_ref + n_PLA[1]
-# pol_alpha_PLA = np.polyfit(freq_aux, alpha_PLA, 1)
-# alpha_PLA = 0.1 * (1e-24) * f_ref**2 + 0.9 * pol_alpha_PLA[0] * f_ref + pol_alpha_PLA[1]
-n_PLA = 1.62 * np.ones(f_ref.size)
-alpha_PLA = 28  # cm^-1 / THz
-alpha_PLA = alpha_PLA * f_ref * 1e-12
-k_PLA = 1e-10 * TDSC.c_0 * alpha_PLA / (4 * np.pi * f_ref)
+freq_aux, n_PLA, n_PLA_std, alpha_PLA, alpha_PLA_std = rd.read_from_1file('./PLA_PVA/PLA.txt')
+n_PVA = np.interp(f_ref, freq_aux, n_PVA, left=n_PVA[0], right=n_PVA[-1])
+alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=alpha_PVA[0], right=alpha_PVA[-1])
+# n_PLA = 1.62 * np.ones(f_ref.size)
+# alpha_PLA = 28  # cm^-1 / THz
+# alpha_PLA = alpha_PLA * f_ref * 1e-12
+k_PLA = 1e2 * TDSC.c_0 * alpha_PLA / (4 * np.pi * f_ref)
 
 
 thick_tupl = (20e-6, 500e-6)
@@ -113,9 +65,9 @@ thick_tupl = (20e-6, 500e-6)
 correct_tuple = (0.09, 1.01)  # Error 10%
 
 k_bounds = [
-    (20e-6, 135e-6),
-    (40e-6, 205e-6),
-    (20e-6, 135e-6)
+    (1e-6, 135e-6),
+    (1e-6, 205e-6),
+    (1e-6, 135e-6)
     # , (- 1000e-6, 0)
     # , (correct_tuple)
     # , correct_tuple
@@ -155,8 +107,8 @@ if __name__ == '__main__':
     E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
     t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
     plt.plot(t_sam, E_sam)
-    # n_s = [TDSC.n_air, n_PLA, n_PVA, n_PLA, TDSC.n_air]
-    # k_s = [0, k_PLA, k_PVA, k_PLA, 0]
+    n_s = [TDSC.n_air, n_PLA, n_PVA, n_PLA, TDSC.n_air]
+    k_s = [0, k_PLA, k_PVA, k_PLA, 0]
     # plt.plot(t_sam, np.fft.irfft(E_ref_w * H_T3.H_sim_rouard(f_ref, n_s, k_s, [0.7e-4, 1.6e-4, 0.7e-4])))
     t_sam *= 1e-12
     f_sam, E_sam_w = DSPf.fourier_analysis(t_sam, E_sam)
@@ -183,7 +135,7 @@ if __name__ == '__main__':
         #                        )
         res = spy_opt.differential_evolution(cost_function,
                                              k_bounds,
-                                             args=(E_sam, E_ref_w, E_sam_w, f_ref, n_PVA, k_PVA, n_PLA, k_PLA),
+                                             args=(E_sam, E_ref_w, E_sam_w, f_ref, n_s, k_s),
                                              # strategy='rand1exp',
                                              # tol=1e-8,
                                              # mutation=(0, 1.99),
@@ -193,8 +145,8 @@ if __name__ == '__main__':
                                              updating='deferred',
                                              workers=-1,
                                              disp=True,  # step cost_function value
-                                             polish=False
-                                             , constraints=A_constraint
+                                             polish=True
+                                             # , constraints=A_constraint
                                              )
         # print(res)
         # print('-----------------------------------------------------')

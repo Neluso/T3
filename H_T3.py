@@ -37,6 +37,9 @@ def phase_factor(n, k, thick, freq):  # theta in radians
     return np.exp(- 1j * n * phi) * np.exp(- k * phi)
 
 
+# def
+
+
 def fabry_perot(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
     # cri2 = cr(n_i, n_2)
     # cri1 = cr(n_i, n_1)
@@ -73,28 +76,65 @@ def H_sim_rouard(freq, n_s, k_s, thick_s):  # n_s y k_s sandwitch de n_air
     return H_teo
 
 
-def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s sandwitch de n_air
-    H_teo = 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
+def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s start n_air
+    H_teo = - 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
     layers = len(thick_s)
+    cn_s = n_s - 1j * k_s
     for layer in range(1, layers + 1):
         layer = 1 + layers - layer
-        print('Layer', layer, 'from', layers)
         theta_l = theta_from_air(theta_in_air, n_s[layer])
         theta_l1 = theta_from_air(theta_in_air, n_s[layer - 1])
         if pol == 's':
-            crl1l = crs(n_s[layer - 1], n_s[layer], theta_l1, theta_l)
-            ctl1l = cts(n_s[layer - 1], n_s[layer], theta_l1, theta_l)
-            ctll1 = cts(n_s[layer], n_s[layer - 1], theta_l, theta_l1)
+            crl1l = crs(cn_s[layer - 1], cn_s[layer], theta_l1, theta_l)
+            ctl1l = cts(cn_s[layer - 1], cn_s[layer], theta_l1, theta_l)
+            ctll1 = cts(cn_s[layer], cn_s[layer - 1], theta_l, theta_l1)
         elif pol == 'p':
-            crl1l = crp(n_s[layer - 1], n_s[layer], theta_l1, theta_l)
-            ctl1l = ctp(n_s[layer - 1], n_s[layer], theta_l1, theta_l)
-            ctll1 = ctp(n_s[layer], n_s[layer - 1], theta_l, theta_l1)
-        phil = phase_factor(n_s[layer], k_s[layer], 2 * thick_s[layer - 1] * np.cos(theta_l), freq)
+            crl1l = crp(cn_s[layer - 1], cn_s[layer], theta_l1, theta_l)
+            ctl1l = ctp(cn_s[layer - 1], cn_s[layer], theta_l1, theta_l)
+            ctll1 = ctp(cn_s[layer], cn_s[layer - 1], theta_l, theta_l1)
+        thick_l = 2 * thick_s[layer - 1] * np.cos(theta_l)
+        phil = phase_factor(n_s[layer], k_s[layer], thick_l, freq)
         trans_term = ctl1l * ctll1 * H_teo * phil  # transmission term
         fp_term = 1 + crl1l * H_teo * phil  # fabry-pérot term
         H_teo = crl1l + trans_term / fp_term
-    quit()
-    return H_teo * phase_factor(TDSC.n_air, 0, 2 * np.sum(thick_s) * np.cos(theta_in_air), freq)
+    return H_teo * phase_factor(- TDSC.n_air, 0, 2 * np.sum(thick_s) * np.cos(theta_in_air), freq)
+
+
+def H_sim_rouard_ref_2_full(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s start n_air
+    H_teo = 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
+    n_i = n_s[2]
+    k_i = k_s[2]
+    n_o = n_s[1]
+    k_o = k_s[1]
+    cn_i = n_i - 1j * k_i
+    cn_o = n_o - 1j * k_o
+    thick_i = thick_s[1]
+    thick_o = thick_s[0]
+    d_air = thick_s[2]
+    theta_i = theta_from_air(theta_in_air, n_i)
+    theta_o = theta_from_air(theta_in_air, n_o)
+
+    cr_oi = crs(cn_o, cn_i, theta_o, theta_i)
+    ct_oi = cts(cn_o, cn_i, theta_o, theta_i)
+    ct_io = cts(cn_i, cn_o, theta_i, theta_o)
+    phi_i = phase_factor(n_i, k_i, 2 * thick_i * np.cos(theta_i), freq)
+
+
+    cr_ao = crs(TDSC.n_air, cn_o, theta_in_air, theta_o)
+    ct_ao = cts(TDSC.n_air, cn_o, theta_in_air, theta_o)
+    ct_oa = cts(cn_o, TDSC.n_air, theta_o, theta_in_air)
+    phi_o = phase_factor(n_o, k_o, 2 * thick_o * np.cos(theta_o), freq)
+
+    H_teo = crs(cn_i, 1e20, theta_i, 0) + cr_ao - cr_oi
+
+    trans_term_i = ct_oi * ct_io * H_teo * phi_i
+    fp_term_i = 1 + cr_oi * H_teo * phi_i
+    H_teo = cr_oi + trans_term_i / fp_term_i
+    trans_term_o = ct_ao * ct_oa * H_teo * phi_o
+    fp_term_o = 1 + cr_ao * H_teo * phi_o
+    H_teo = cr_ao + trans_term_o / fp_term_o
+
+    return - H_teo * phase_factor(TDSC.n_air, 0, 2 * d_air * np.cos(theta_in_air), freq)
 
 
 def plot_coeffs(n_1, n_2):
