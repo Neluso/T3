@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from scipy import ndimage
-from mayavi import mlab
+# from mayavi import mlab
 from mpl_toolkits.mplot3d import Axes3D
 
 
@@ -13,36 +13,37 @@ zs3 = list()
 
 
 fh = open('./results.txt', 'r')
+points = list()
 for line in fh:
     line = line.replace('(', '')
     line = line.replace(')', '')
     line = line.replace('\n', '')
     line = line.split(',')
-    if float(line[0]) <= 35.0:
+    if float(line[1]) >= 15.0:
         continue
-    # if 25.0 >= float(line[1]) >= 5.0:
-    #     continue
-    y.append(float(line[0]))
-    x.append(float(line[1]))
-    zs1.append(float(line[2]))
-    zs2.append(float(line[2]) + float(line[3]))
-    zs3.append(float(line[2]) + float(line[3]) + float(line[4]))
+    line = (float(line[0]), float(line[1]), float(line[2]), float(line[3]), float(line[4]))
+    points.append(line)
 
 
-x = np.array(x)
-y = np.array(y)
-zs1 = np.array(zs1) * 1e6
-zs2 = np.array(zs2) * 1e6
-zs3 = np.array(zs3) * 1e6
+points = np.array(points)
+points_sort_idx = np.lexsort((points[:, 1], points[:, 0]))
+points = points[points_sort_idx]
 
-zs1 = ndimage.uniform_filter(zs1, size=10)
-zs2 = ndimage.uniform_filter(zs2, size=10)
-zs3 = ndimage.uniform_filter(zs3, size=10)
+
+x = np.flip(points[:, 1])
+y = np.flip(points[:, 0])
+zs1 = points[:, 2] * 1e6
+zs2 = points[:, 3] * 1e6 + zs1
+zs3 = points[:, 4] * 1e6 + zs2
+
+zs1 = ndimage.uniform_filter(zs1, size=3)
+zs2 = ndimage.uniform_filter(zs2, size=3)
+zs3 = ndimage.uniform_filter(zs3, size=3)
 
 # print(int(int(np.amax(x) - np.amin(x))) + 1)
 # quit()
 # zs_aux = zs1.reshape((int(np.amax(y) - np.amin(y)) + 1, int(np.amax(x) - np.amin(x)) + 1))
-zs_aux = zs1.reshape((int(np.amax(y) - np.amin(y)) + 1, int(30.0 - 0.0) + 1))
+zs_aux = zs1.reshape((int(np.amax(y) - np.amin(y)) + 1, int(15.0 - 0.0)))
 avg_wgt = np.zeros(zs_aux.shape)
 idxX = zs_aux.shape[0]
 idxY = zs_aux.shape[1]

@@ -70,12 +70,12 @@ def H_sim_rouard(freq, n_s, k_s, thick_s):  # n_s y k_s sandwitch de n_air
     H_teo = ct(cn_s[0], cn_s[1])
 
     for layer in range(1, len(thick_s) + 1):
-        phil = phase_factor(n_s[layer] - TDSC.n_air, k_s[layer], thick_s[layer - 1], freq)
+        phil = phase_factor(n_s[layer], k_s[layer], thick_s[layer - 1], freq)
         ctll1 = ct(cn_s[layer], cn_s[layer + 1])
         fpl = fabry_perot(freq, n_s[layer], k_s[layer], thick_s[layer - 1],
                           n_s[layer - 1], k_s[layer - 1], n_s[layer + 1], k_s[layer + 1])
         H_teo = H_teo * phil * ctll1 * fpl
-    return H_teo
+    return H_teo * phase_factor(- TDSC.n_air, 0, np.sum(thick_s), freq)
 
 
 def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s start n_air

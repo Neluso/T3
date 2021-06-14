@@ -23,7 +23,7 @@ def param_2_thickess(param_d):
 
 def cost_function(params, *args):
     E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s, theta_input = args
-    H_teo = H_T3.H_sim_rouard_ref(freqs, n_s, k_s, params, theta_input)  # theta in air = 45 deg
+    H_teo = H_T3.H_sim_rouard(freqs, n_s, k_s, params)
     H_sam = E_sam_w / E_ref_w
     E_teo = np.fft.irfft(E_ref_w * H_teo, n=E_sam.size)
     delta_E = E_sam - E_teo
@@ -43,13 +43,13 @@ theta_input = 45  # deg
 theta_input *= np.pi / 180
 
 sample_num = 5
-data_dir = './data/20210614_PLA_PVA_1/'
+data_dir = './data/20210614_PLA_PVA_1/test_transm/'
 
 ref_file = data_dir + 'ref' + str(sample_num) + '.txt'
 # ref_file = data_dir + 'elco_ref_244.txt'
 # ref_file = './data/ref.txt'
 t_ref, E_ref = rd.read_1file(ref_file)
-E_ref *= -1
+# E_ref *= -1
 delta_t_ref = np.mean(np.diff(t_ref))
 enlargement = 0 * E_ref.size
 E_ref = DSPf.zero_padding(E_ref, 0, enlargement)
@@ -86,11 +86,11 @@ freq_aux, n_PVA, n_PVA_std, alpha_PVA, alpha_PVA_std = rd.read_from_1file('./PLA
 # n_PVA = pol_n_PVA[0] * f_ref + pol_n_PVA[1]
 # pol_alpha_PVA = np.polyfit(freq_aux, alpha_PVA, 2)
 # alpha_PVA = pol_alpha_PVA[0] * f_ref**2 + pol_alpha_PVA[1] * f_ref + pol_alpha_PVA[2]
-n_PVA = np.interp(f_ref, freq_aux, n_PVA, left=n_PVA[0], right=n_PVA[-1])
-alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=alpha_PVA[0], right=alpha_PVA[-1])
-# n_PVA = 1.89 * np.ones(f_ref.size)
-# alpha_PVA = 52  # cm^-1 / THz
-# alpha_PVA = alpha_PVA * f_ref * 1e-12
+# n_PVA = np.interp(f_ref, freq_aux, n_PVA, left=n_PVA[0], right=n_PVA[-1])
+# alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=alpha_PVA[0], right=alpha_PVA[-1])
+n_PVA = 1.89 * np.ones(f_ref.size)
+alpha_PVA = 52  # cm^-1 / THz
+alpha_PVA = alpha_PVA * f_ref * 1e-12
 k_PVA = 1e2 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
 k_PVA[0] = 0
 
@@ -99,11 +99,11 @@ freq_aux, n_PLA, n_PLA_std, alpha_PLA, alpha_PLA_std = rd.read_from_1file('./PLA
 # n_PLA = pol_n_PLA[0] * f_ref + n_PLA[1]
 # pol_alpha_PLA = np.polyfit(freq_aux, alpha_PLA, 2)
 # alpha_PLA = pol_alpha_PLA[0] * f_ref**2 + pol_alpha_PLA[1] * f_ref + pol_alpha_PLA[2]
-n_PLA = np.interp(f_ref, freq_aux, n_PLA, left=n_PLA[0], right=n_PLA[-1])
-alpha_PLA = np.interp(f_ref, freq_aux, alpha_PLA, left=alpha_PLA[0], right=alpha_PLA[-1])
-# n_PLA = 1.62 * np.ones(f_ref.size)
-# alpha_PLA = 28  # cm^-1 / THz
-# alpha_PLA = alpha_PLA * f_ref * 1e-12
+# n_PLA = np.interp(f_ref, freq_aux, n_PLA, left=n_PLA[0], right=n_PLA[-1])
+# alpha_PLA = np.interp(f_ref, freq_aux, alpha_PLA, left=alpha_PLA[0], right=alpha_PLA[-1])
+n_PLA = 1.62 * np.ones(f_ref.size)
+alpha_PLA = 28  # cm^-1 / THz
+alpha_PLA = alpha_PLA * f_ref * 1e-12
 k_PLA = 1e2 * TDSC.c_0 * alpha_PLA / (4 * np.pi * f_ref)
 k_PLA[0] = 0
 
@@ -155,8 +155,8 @@ if __name__ == '__main__':
     E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
     t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
     plt.plot(t_sam, E_sam)
-    n_s = np.array([TDSC.n_air * np.ones(n_PLA.shape), n_PLA, n_PVA, n_PLA])
-    k_s = np.array([np.zeros(k_PLA.shape), k_PLA, k_PVA, k_PLA])
+    n_s = np.array([TDSC.n_air * np.ones(n_PLA.shape), n_PLA, n_PVA, n_PLA, TDSC.n_air * np.ones(n_PLA.shape)])
+    k_s = np.array([np.zeros(k_PLA.shape), k_PLA, k_PVA, k_PLA, np.zeros(k_PLA.shape)])
     # n_s = np.array([TDSC.n_air * np.ones(n_celo.shape), n_celo, n_vid])
     # k_s = np.array([np.zeros(k_celo.shape), k_celo, k_vid])
     # plt.plot(t_sam, np.fft.irfft(E_ref_w * H_T3.H_sim_rouard(f_ref, n_s, k_s, [0.7e-4, 1.6e-4, 0.7e-4])))
@@ -228,7 +228,7 @@ if __name__ == '__main__':
     # n_s = [TDSC.n_air, np.mean(z2), TDSC.n_air]
     # k_s = [0, np.mean(z3) * f_ref * 1e-12, 0]
     # thick_s = np.array([30e-6, 180e-6, 0])
-    H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, theta_input)
+    H_teo = H_T3.H_sim_rouard(f_ref, n_s, k_s, thick_s)
     # plt.figure(30)
     # plt.plot(f_ref*1e-12, np.abs(H_teo))
     E_teo = np.fft.irfft(H_teo * E_ref_w)
