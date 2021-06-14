@@ -34,7 +34,9 @@ def crp(n_1, n_2, theta_1, theta_2):  # n_1: incident from, n_2: incident to
 def phase_factor(n, k, thick, freq):  # theta in radians
     omg = 2 * np.pi * freq
     phi = omg * thick / TDSC.c_0
-    return np.exp(- 1j * n * phi) * np.exp(- k * phi)
+    exp = np.exp(- 1j * n * phi)
+    exp *= np.exp(- k * phi)
+    return exp
 
 
 # def
@@ -64,15 +66,15 @@ def H_sim(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
 
 
 def H_sim_rouard(freq, n_s, k_s, thick_s):  # n_s y k_s sandwitch de n_air
-
-    H_teo = ct(n_s[0] - 1j * k_s[0], n_s[1] - 1j * k_s[1])
+    cn_s = n_s - 1j * k_s
+    H_teo = ct(cn_s[0], cn_s[1])
 
     for layer in range(1, len(thick_s) + 1):
         phil = phase_factor(n_s[layer] - TDSC.n_air, k_s[layer], thick_s[layer - 1], freq)
-        cll1 = ct(n_s[layer] - 1j * k_s[layer], n_s[layer + 1] - 1j * k_s[layer + 1])
+        ctll1 = ct(cn_s[layer], cn_s[layer + 1])
         fpl = fabry_perot(freq, n_s[layer], k_s[layer], thick_s[layer - 1],
                           n_s[layer - 1], k_s[layer - 1], n_s[layer + 1], k_s[layer + 1])
-        H_teo = H_teo * phil * cll1 * fpl
+        H_teo = H_teo * phil * ctll1 * fpl
     return H_teo
 
 
