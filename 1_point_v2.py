@@ -56,6 +56,8 @@ alpha_PVA = np.interp(f_ref, freq_aux, alpha_PVA, left=0, right=alpha_PVA[-1])
 # alpha_PVA = 52  # cm^-1 / THz
 # alpha_PVA = alpha_PVA * f_ref * 1e-12
 k_PVA = 1e2 * TDSC.c_0 * alpha_PVA / (4 * np.pi * f_ref)
+print(k_PVA)
+quit()
 
 freq_aux, n_PLA, n_PLA_std, alpha_PLA, alpha_PLA_std = rd.read_from_1file('./PLA_PVA/PLA.txt')
 n_PLA = np.interp(f_ref, freq_aux, n_PLA, left=n_PLA[0], right=n_PLA[-1])
