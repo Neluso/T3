@@ -72,9 +72,9 @@ wh = open('./results.txt', 'a')
 points = list()
 
 k_bounds = [
-    (1e-6, 135e-6),
-    (1e-6, 205e-6),
-    (1e-6, 135e-6)
+    (0e-6, 3e-4),
+    (0e-6, 3e-4),
+    (0e-6, 3e-4)
 ]
 
 A_constraint = np.array(
@@ -93,10 +93,12 @@ if __name__ == '__main__':
         E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
         t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
         sam_file_name = sam_file.split('_')
-        posV = float(sam_file_name[1])
+        posV = sam_file_name[1]
         posH = sam_file_name[3]
-        ref_file = img_dir + 'PosV_25.000000_PosH_' + posH
+        # ref_file = img_dir + 'PosV_25.000000_PosH_' + posH
+        ref_file = img_dir + 'PosV_' + str(posV) + '_PosH_25.000000.txt'
         posH = float(posH.replace('.txt', ''))
+        posV = float(posV)
         t_ref, E_ref = rd.read_1file(ref_file)
         delta_t_ref = np.mean(np.diff(t_ref))
         E_ref = DSPf.zero_padding(E_ref, 0, enlargement)
@@ -118,11 +120,11 @@ if __name__ == '__main__':
                                                  # recombination=0.8,
                                                  # popsize=90,
                                                  # maxiter=3000,
-                                                 # updating='deferred',
-                                                 # workers=-1,
+                                                 updating='deferred',
+                                                 workers=-1,
                                                  disp=False,  # step cost_function value
                                                  polish=True
-                                                 , constraints=A_constraint
+                                                 # , constraints=A_constraint
                                                  )
             z1.append(res.x[0])
             z2.append(res.x[1])
