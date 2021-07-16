@@ -5,6 +5,7 @@ import scipy.stats
 import H_T3
 import TDS_constants as TDSC
 import aux_functions
+import read_data
 import read_data as rd
 import matplotlib.pyplot as plt
 import DSP_functions as DSPf
@@ -41,6 +42,11 @@ def cost_function(params, *args):
 
 theta_input = 45  # deg
 theta_input *= np.pi / 180
+
+t_sam, E_sam = rd.read_1file('./data/20210609_celo_vidr_1/sam1.txt')
+plt.plot(E_sam)
+plt.show()
+quit()
 
 sample_num = 5
 data_dir = './data/20210614_PLA_PVA_1/'
