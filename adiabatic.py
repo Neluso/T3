@@ -22,15 +22,15 @@ def add_diffuse_layer(array_in, add_array, idx_to_add):
 
 
 def cost_function(params, *args):
-    E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s = args
-    H_teo = H_T3.H_sim_rouard(freqs, n_s, k_s, params)
+    E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s, deg_in = args
+    H_teo = H_T3.H_sim_rouard_ref(freqs, n_s, k_s, params, deg_in)
     E_teo = np.fft.irfft(E_ref_w * H_teo, n=E_sam.size)
     delta_E = E_sam - E_teo
     return np.sum(delta_E**2)
 
 
 def cost_function_adiabatica(params, *args):
-    E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s, N_grid = args
+    E_sam, E_ref_w, E_sam_w, freqs, n_s, k_s, deg_in, N_grid = args
     thick_s = np.array([])
     if params.size <= 2:
         thick_s = params
@@ -42,13 +42,15 @@ def cost_function_adiabatica(params, *args):
                 difuse_thick = np.ones(N_grid) * params[i] / N_grid
                 for j in range(difuse_thick.size):
                     thick_s = np.append(thick_s, difuse_thick[j])
-    H_teo = H_T3.H_sim_rouard(freqs, n_s, k_s, thick_s)
+    H_teo = H_T3.H_sim_rouard_ref(freqs, n_s, k_s, thick_s, deg_in)
     E_teo = np.fft.irfft(E_ref_w * H_teo, n=E_sam.size)
     delta_E = E_sam - E_teo
     return np.sum(delta_E**2)
 
 
-ref_file = './data/aux_data/ref.txt'
+ref_file = './data/ref.txt'
+# sam_file = './data/adiab_2_lay_200_tran_10.txt'
+sam_file = './data/noad_2_lay_200.txt'
 t_ref, E_ref = rd.read_1file(ref_file)
 E_ref *= -1
 delta_t_ref = np.mean(np.diff(t_ref))
@@ -58,16 +60,26 @@ t_ref = np.concatenate((t_ref, t_ref[-1] * np.ones(enlargement) + delta_t_ref * 
 t_ref *= 1e-12
 f_ref, E_ref_w = DSPf.fourier_analysis(t_ref, E_ref)
 f_ref[0] = 1
+t_sam, E_sam = rd.read_1file(sam_file)
+E_sam = DSPf.zero_padding(E_sam, 0, enlargement)
+t_sam = np.concatenate((t_sam, t_sam[-1] * np.ones(enlargement) + delta_t_ref * np.arange(1, enlargement + 1)))
+t_sam *= 1e-12
+f_sam, E_sam_w = DSPf.fourier_analysis(t_sam, E_sam)
+f_sam[0] = 1
 
-n_1 = 1.4 * np.ones(f_ref.shape)
-k_1 = 0.001 * f_ref * 1e-12
-n_2 = 1.6 * np.ones(f_ref.shape)
-k_2 = 0.001 * f_ref * 1e-12
+# plt.plot(E_ref)
+# plt.plot(E_sam)
+# plt.show()
+
+n_1 = 1.45 * np.ones(f_ref.shape)
+k_1 = np.zeros(f_ref.size)  # np.zeros(f_ref.size)  # 0.001 * f_ref * 1e-12  #
+n_2 = 1.55 * np.ones(f_ref.shape)
+k_2 = np.zeros(f_ref.size)
 n_3 = 1.8 * np.ones(f_ref.shape)
 k_3 = 0.001 * f_ref * 1e-12
 k_adiab = 0.001 * f_ref * 1e-12
 deg_in_air = np.pi * 45 / 180
-N_grid = 100
+N_grid = 10
 m1 = (n_2 - n_1) / N_grid
 m2 = (n_3 - n_2) / N_grid
 
@@ -84,23 +96,59 @@ difuse_n2 = np.array(difuse_n2)
 difuse_k = np.array(difuse_k)
 
 
-n_s = np.array([TDSC.n_air * np.ones(n_1.shape), n_1, n_2, n_3])
-k_s = np.array([np.zeros(k_1.shape), k_1, k_2, k_3])
-thick_s = np.array([200e-6, 20e-6, 200e-6])
-
-H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, deg_in_air)
-plt.plot(np.fft.irfft(H_teo), label='noad', lw=1)
-
-n_s = add_diffuse_layer(n_s, difuse_n2, 3)
+n_s = np.array([TDSC.n_air * np.ones(n_1.shape), n_1, n_2])  # , n_3])
+k_s = np.array([np.zeros(k_1.shape), k_1, k_2])  # , k_3])
+H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, np.array([1000e-6, 1000e-6]), deg_in_air)
+plt.plot(np.fft.irfft(H_teo * E_ref_w), label='noad', lw=1)
+# thick_s = np.array([200e-6, 10e-6, 200e-6])
+# n_s = add_diffuse_layer(n_s, difuse_n2, 3)
 n_s = add_diffuse_layer(n_s, difuse_n1, 2)
-# print(n_s.shape)
-# quit()
-k_s = add_diffuse_layer(k_s, difuse_k, 3)
+# k_s = add_diffuse_layer(k_s, difuse_k, 3)
 k_s = add_diffuse_layer(k_s, difuse_k, 2)
 
+thick_s = np.array([995e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 1e-6, 995e-6])
+H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, deg_in_air)
+plt.plot(np.fft.irfft(H_teo * E_ref_w), label='10 um', lw=1)
+thick_s = np.array([990e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 2e-6, 990e-6])
+H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, deg_in_air)
+plt.plot(np.fft.irfft(H_teo * E_ref_w), label='20 um', lw=1)
+thick_s = np.array([975e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 5e-6, 975e-6])
+H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, deg_in_air)
+plt.plot(np.fft.irfft(H_teo * E_ref_w), label='50 um', lw=1)
+thick_s = np.array([950e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 10e-6, 950e-6])
+H_teo = H_T3.H_sim_rouard_ref(f_ref, n_s, k_s, thick_s, deg_in_air)
+plt.plot(np.fft.irfft(H_teo * E_ref_w), label='100 um', lw=1)
+plt.legend()
+plt.show()
+quit()
 
-cost_function_adiabatica(np.array([200e-6, 10e-6, 200e-6]),
-                         1, E_ref_w, 1, f_ref, n_s, k_s, N_grid)
+
+k_bounds = [
+    (1e-6, 400e-6),
+    (1e-6, 400e-6)
+]
+res = spy_opt.differential_evolution(cost_function,
+                                     k_bounds,
+                                     args=(E_sam, E_ref_w, E_sam_w, f_ref, n_s, k_s, deg_in_air)
+                                     )
+print('Fit normal')
+print(res.x * 1e6, 'um')
+
+# n_s = add_diffuse_layer(n_s, difuse_n2, 3)
+n_s = add_diffuse_layer(n_s, difuse_n1, 2)
+# k_s = add_diffuse_layer(k_s, difuse_k, 3)
+k_s = add_diffuse_layer(k_s, difuse_k, 2)
+k_bounds = [
+    (1e-6, 400e-6),
+    (1e-6, 20e-6),
+    (1e-6, 400e-6)
+]
+res = spy_opt.differential_evolution(cost_function_adiabatica,
+                                     k_bounds,
+                                     args=(E_sam, E_ref_w, E_sam_w, f_ref, n_s, k_s, deg_in_air, N_grid)
+                                     )
+print('Fit adiabático')
+print(res.x * 1e6, 'um')
 
 
 # difuse_thick = np.ones(N_grid) * 1e-6 / N_grid
