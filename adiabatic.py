@@ -126,7 +126,7 @@ n_s = add_diffuse_layer(n_s, difuse_n1, 2)
 # k_s = add_diffuse_layer(k_s, difuse_k, 3)
 k_s = add_diffuse_layer(k_s, difuse_k, 2)
 k_bounds = [
-    (190e-6, 220e-6),
+    (150e-6, 220e-6),
     (1e-6, 20e-6),
     (190e-6, 220e-6)
 ]
