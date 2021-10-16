@@ -86,7 +86,7 @@ ax.plot_trisurf(np.flip(x), y, zs3, color='tab:green')
 # ax.scatter(x, y, zs2, color='tab:orange')
 # ax.scatter(x, y, zs3, color='tab:green')
 
-
+#### Tweaks para el plot ####
 ax.set_xlabel('X (mm)')
 ax.set_ylabel('Y (mm)')
 ax.set_zlabel(r'Z ($\mu m$)')

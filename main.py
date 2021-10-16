@@ -12,11 +12,8 @@ import time
 import tqdm
 
 
-def param_2_thickess(param_d):
-    return (25 * param_d + 5) * 1e-5  # 50 to 250 um
 
-
-def cost_function(params, *args):
+def cost_function(params, *args):  # params = valores de espesor ordenados,
     E_sam, E_ref_w, freqs, n_s, k_s = args
     if (params < np.zeros(params.shape)).any():
         return np.sum(np.abs(E_sam))
@@ -38,6 +35,8 @@ t_ref = np.concatenate((t_ref, t_ref[-1] * np.ones(enlargement) + delta_t_ref * 
 t_ref *= 1e-12
 f_ref, E_ref_w = DSPf.fourier_analysis(t_ref, E_ref)
 f_ref[0] = 1
+
+# Diferentes aproximaciones de los parámetros ópticos de los materiales de las capas.
 
 freq_aux, n_PVA, n_PVA_std, alpha_PVA, alpha_PVA_std = rd.read_from_1file('./PLA_PVA/PVA.txt')
 n_PVA = np.interp(f_ref, freq_aux, n_PVA, left=n_PVA[0], right=n_PVA[-1])

@@ -43,6 +43,7 @@ def phase_factor(n, k, thick, freq):  # theta in radians
 
 
 def fabry_perot(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
+    # Devuelve el efecto frabry perot para la capa "i" entre n1 y n2. n1 y n2 pueden ser iguales o diferentes.
     # cri2 = cr(n_i, n_2)
     # cri1 = cr(n_i, n_1)
     cri2 = cr(n_i - 1j * k_i, n_2 - 1j * k_2)
@@ -65,7 +66,16 @@ def H_sim(freq, n_i, k_i, thick_i, n_1, k_1, n_2, k_2):
     return H_i
 
 
-def H_sim_rouard(freq, n_s, k_s, thick_s):  # n_s y k_s sandwitch de n_air
+def H_sim_rouard(freq, n_s, k_s, thick_s):
+    # n_s, k_s y thick_s han de ser los valores de las diferentes capas ordenados, es decir, n_s[1] = n1,
+    # a su vez, n1 puede ser un array/vector del tamaño del array de frecuencias.
+    # /!\/!\/!\ Importante /!\/!\/!\
+    # n_s y k_s deben estar rodeados por el substrato (generalmente aire).
+    # Por ejemplo, si tenemos 2 capas, la estructura de n_s será:
+    # n_s[0] = n_aire
+    # n_s[1] = n_1
+    # n_s[2] = n_2
+    # n_s[3] = n_aire
     cn_s = n_s - 1j * k_s
     H_teo = ct(cn_s[0], cn_s[1])
 
@@ -78,8 +88,16 @@ def H_sim_rouard(freq, n_s, k_s, thick_s):  # n_s y k_s sandwitch de n_air
     return H_teo * phase_factor(- TDSC.n_air, 0, np.sum(thick_s), freq)
 
 
-def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s start n_air
-    H_teo = - 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
+def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):
+    # n_s, k_s y thick_s han de ser los valores de las diferentes capas ordenados, es decir, n_s[1] = n1,
+    # a su vez, n1 puede ser un array/vector del tamaño del array de frecuencias.
+    # /!\/!\/!\ Importante /!\/!\/!\
+    # n_s y k_s deben estar precedidos por el substrato (generalmente aire).
+    # Por ejemplo, si tenemos 2 capas, la estructura de n_s será:
+    # n_s[0] = n_aire
+    # n_s[1] = n_1
+    # n_s[2] = n_2
+    H_teo = - 1  # refs medidas en reflexion asumiendo substrato metálico, por lo tanto hay que corregir phase de pi
     layers = len(thick_s)
     cn_s = n_s - 1j * k_s
     for layer in range(1, layers + 1):
@@ -102,8 +120,9 @@ def H_sim_rouard_ref(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k
     return H_teo * phase_factor(- TDSC.n_air, 0, 2 * np.sum(thick_s) * np.cos(theta_in_air), freq)
 
 
-def H_sim_rouard_ref_2_full(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # n_s y k_s start n_air
-    H_teo = 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
+def H_sim_rouard_ref_2_full(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):
+    # Versión específica de 2 capas, funciona como la anterior, pero SOLO para 2 capas, capas extra producirán error.
+    H_teo = - 1  # refs medidas en reflexion, por lo tanto hay que corregir phase de pi
     n_i = n_s[2]
     k_i = k_s[2]
     n_o = n_s[1]
@@ -136,7 +155,7 @@ def H_sim_rouard_ref_2_full(freq, n_s, k_s, thick_s, theta_in_air, pol='s'):  # 
     fp_term_o = 1 + cr_ao * H_teo * phi_o
     H_teo = cr_ao + trans_term_o / fp_term_o
 
-    return - H_teo * phase_factor(TDSC.n_air, 0, 2 * d_air * np.cos(theta_in_air), freq)
+    return H_teo * phase_factor(TDSC.n_air, 0, 2 * d_air * np.cos(theta_in_air), freq)
 
 
 def plot_coeffs(n_1, n_2):
